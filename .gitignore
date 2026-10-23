@@ -1,0 +1,7 @@
+# Configuración con claves reales: NO se sube a GitHub
+config/local.php
+
+# Registros y archivos temporales
+*.log
+.DS_Store
+Thumbs.db

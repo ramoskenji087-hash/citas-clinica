@@ -1,0 +1,7 @@
+# Solo la carpeta public/ debe abrirse desde el navegador.
+# Las demás carpetas contienen claves y lógica interna: se responde 403 (acceso denegado).
+RewriteEngine On
+RewriteRule ^(app|config|sql|tests|docs)(/|$) - [F,L]
+
+# No mostrar la lista de archivos de ninguna carpeta
+Options -Indexes
