@@ -7,6 +7,7 @@ use App\Datos\Conexion;
 use App\Seguridad\Roles;
 use App\Seguridad\Sesion;
 use App\Servicios\AdministracionUsuariosService;
+use App\Servicios\CuentaCorreoService;
 use App\Servicios\ReglaException;
 use App\Validacion\ValidadorUsuario;
 use App\Vistas\Plantilla;
@@ -19,8 +20,7 @@ $id = is_string($_GET['id'] ?? null) && ctype_digit($_GET['id']) ? (int) $_GET['
 
 $datos = [
     'nombre_usuario' => '', 'correo' => '', 'nombres' => '', 'apellidos' => '',
-    'rol' => 0, 'id_medico' => 0, 'id_paciente' => 0,
-    'puede_marcar_atendida' => false, 'clave' => '',
+    'rol' => 0, 'id_medico' => 0, 'id_paciente' => 0, 'puede_marcar_atendida' => false,
 ];
 $errores = [];
 $errorGeneral = null;
@@ -43,7 +43,6 @@ try {
             'id_medico' => (int) ($cuenta['id_medico'] ?? 0),
             'id_paciente' => (int) ($cuenta['id_paciente'] ?? 0),
             'puede_marcar_atendida' => (int) $cuenta['puede_marcar_atendida'] === 1,
-            'clave' => '',
         ];
     }
 } catch (\RuntimeException $e) {
@@ -66,16 +65,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'id_medico' => $numero('id_medico'),
             'id_paciente' => $numero('id_paciente'),
             'puede_marcar_atendida' => isset($_POST['puede_marcar_atendida']),
-            'clave' => is_string($_POST['clave'] ?? null) ? $_POST['clave'] : '',
         ];
 
-        $errores = ValidadorUsuario::usuario($datos, $id === null);
+        $errores = ValidadorUsuario::usuario($datos);
 
         if ($errores === []) {
             try {
                 if ($id === null) {
-                    AdministracionUsuariosService::crear($datos);
-                    header('Location: usuarios.php?aviso=creada');
+                    $nuevoId = AdministracionUsuariosService::crear($datos);
+
+                    // La cuenta ya existe. Si el correo falla, se avisa y se puede reenviar desde la lista.
+                    try {
+                        CuentaCorreoService::enviarActivacion($nuevoId);
+                        header('Location: usuarios.php?aviso=creada');
+                    } catch (\RuntimeException $e) {
+                        header('Location: usuarios.php?aviso=creada_sin_correo');
+                    }
                 } else {
                     AdministracionUsuariosService::modificar($id, $datos);
                     header('Location: usuarios.php?aviso=modificada');
@@ -122,6 +127,12 @@ Plantilla::inicio($titulo);
   </div>
 <?php endif; ?>
 
+<?php if ($id === null): ?>
+  <p class="resumen">Al guardar, el sistema envía a la persona un correo para activar su cuenta y elegir su contraseña. Usted no necesita conocer esa contraseña.</p>
+<?php else: ?>
+  <p class="resumen">Para cambiar la contraseña, use <em>Enviar enlace</em> en la lista de usuarios.</p>
+<?php endif; ?>
+
 <form method="post" action="<?= Plantilla::e($accion) ?>">
   <input type="hidden" name="csrf" value="<?= Plantilla::e(Sesion::tokenCsrf()) ?>">
 
@@ -136,7 +147,7 @@ Plantilla::inicio($titulo);
 
     <div class="campo<?= isset($errores['correo']) ? ' con-error' : '' ?>">
       <label for="correo">Correo electrónico</label>
-      <input id="correo" name="correo" type="text" maxlength="120" value="<?= Plantilla::e($datos['correo']) ?>">
+      <input id="correo" name="correo" type="email" maxlength="120" value="<?= Plantilla::e($datos['correo']) ?>">
       <?php if (isset($errores['correo'])): ?>
         <p class="mensaje">Error: <?= Plantilla::e($errores['correo']) ?></p>
       <?php endif; ?>
@@ -210,17 +221,8 @@ Plantilla::inicio($titulo);
     </label>
   </fieldset>
 
-  <div class="campo<?= isset($errores['clave']) ? ' con-error' : '' ?>">
-    <label for="clave"><?= $id === null ? 'Contraseña inicial' : 'Nueva contraseña (déjela vacía para no cambiarla)' ?></label>
-    <input id="clave" name="clave" type="password" autocomplete="new-password">
-    <?php if (isset($errores['clave'])): ?>
-      <p class="mensaje">Error: <?= Plantilla::e($errores['clave']) ?></p>
-    <?php endif; ?>
-  </div>
-  <p class="resumen">La contraseña debe tener al menos 8 caracteres, con letras y números. Entregue la contraseña inicial a la persona en privado.</p>
-
   <div class="acciones">
-    <button class="btn btn-principal" type="submit">Guardar</button>
+    <button class="btn btn-principal" type="submit"><?= $id === null ? 'Crear y enviar correo' : 'Guardar cambios' ?></button>
     <a class="btn btn-linea" href="usuarios.php">Cancelar</a>
   </div>
 </form>

@@ -97,7 +97,7 @@ final class AdministracionUsuariosService
                  RETURNING id_usuario'
             );
             $consulta->execute(self::parametros($d) + [
-                ':hash' => password_hash((string) $d['clave'], PASSWORD_DEFAULT),
+                ':hash' => password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT), // nadie conoce esta clave; la define la persona con el enlace del correo
             ]);
 
             return (int) $consulta->fetchColumn();
@@ -110,7 +110,7 @@ final class AdministracionUsuariosService
     }
 
     /**
-     * Modifica una cuenta. Si se escribe una contraseña nueva, se reemplaza el hash; si no, se conserva.
+     * Modifica los datos de una cuenta. La contraseña no cambia aquí: la define la persona con el enlace del correo.
      *
      * @param array<string, mixed> $d
      */
@@ -120,17 +120,11 @@ final class AdministracionUsuariosService
         self::verificarUnicos($pdo, $d, $id);
 
         $parametros = self::parametros($d) + [':id_usuario' => $id];
-        $claveNueva = (string) ($d['clave'] ?? '');
 
         $sql = 'UPDATE usuario
                    SET nombre_usuario = :nombre_usuario, correo = :correo, nombres = :nombres,
                        apellidos = :apellidos, id_rol = :rol, id_medico = :medico,
                        id_paciente = :paciente, puede_marcar_atendida = :permiso';
-
-        if ($claveNueva !== '') {
-            $sql .= ', password_hash = :hash';
-            $parametros[':hash'] = password_hash($claveNueva, PASSWORD_DEFAULT);
-        }
 
         try {
             $pdo->prepare($sql . ' WHERE id_usuario = :id_usuario')->execute($parametros);

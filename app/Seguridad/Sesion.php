@@ -29,7 +29,7 @@ final class Sesion
         session_set_cookie_params([
             'lifetime' => 0,
             'path'     => '/',
-            'secure'   => false, // cambiar a true cuando el sistema use HTTPS
+            'secure'   => (($_SERVER['HTTPS'] ?? '') === 'on') || getenv('APP_HTTPS') === '1', // true cuando el sitio usa HTTPS
             'httponly' => true,
             'samesite' => 'Strict',
         ]);

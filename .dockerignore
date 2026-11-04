@@ -1,0 +1,9 @@
+.git
+.gitattributes
+.gitignore
+config/local.php
+tests
+docs
+sql
+*.zip
+README.md

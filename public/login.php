@@ -82,6 +82,7 @@ Plantilla::inicio('Iniciar sesión', false);
 
     <button class="btn btn-principal" type="submit">Entrar</button>
   </form>
+  <p class="ayuda"><a href="recuperar.php">¿Olvidó su contraseña?</a></p>
 </section>
 <?php
 Plantilla::fin();

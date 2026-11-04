@@ -29,6 +29,9 @@ use App\Validacion\Validador;
 use App\Validacion\ValidadorAgenda;
 use App\Validacion\ValidadorCita;
 use App\Validacion\ValidadorUsuario;
+use App\Servicios\AdministracionUsuariosService;
+use App\Servicios\CuentaCorreoService;
+use App\Servicios\ReglaException;
 
 const BASE_PRUEBAS = 'citas_clinica_pruebas';
 const FECHA_LUNES = '2027-03-01';   // lunes: Juan Pérez atiende de 08:00 a 12:00
@@ -133,6 +136,21 @@ function usuarioDemo(string $nombre, string $clave): array
     }
 
     return $usuario;
+}
+
+/** Crea una cuenta de prueba sin enviar correo (la contraseña la define el enlace, no el alta). */
+function crearUsuarioDePrueba(string $nombre): int
+{
+    return AdministracionUsuariosService::crear([
+        'nombre_usuario' => $nombre,
+        'correo' => $nombre . '@ejemplo.com',
+        'nombres' => 'Prueba',
+        'apellidos' => 'Correo',
+        'rol' => Roles::RECEPCIONISTA,
+        'id_medico' => 0,
+        'id_paciente' => 0,
+        'puede_marcar_atendida' => false,
+    ]);
 }
 
 /**
@@ -512,6 +530,47 @@ $pruebas[] = ['V1', 'No se puede reservar en una fecha pasada', function () {
 // ---------------------------------------------------------------------------
 // Ejecución y resultado
 // ---------------------------------------------------------------------------
+
+// --- Activación y recuperación por correo -----------------------------------
+
+$pruebas[] = ['C1', 'El enlace define la contraseña y no sirve una segunda vez', function () {
+    $id = crearUsuarioDePrueba('correo.uno');
+    $token = CuentaCorreoService::crearToken($id, 'activacion');
+
+    CuentaCorreoService::definirClave($token, 'Nueva2027');
+
+    afirmar(AutenticacionService::autenticar('correo.uno', 'Nueva2027') !== null,
+        'La contraseña definida por el enlace no sirve para entrar.');
+
+    esperarRechazo(fn () => CuentaCorreoService::definirClave($token, 'Otra2028'), 'no es válido');
+}];
+
+$pruebas[] = ['C2', 'Un enlace vencido no define la contraseña', function () {
+    $id = crearUsuarioDePrueba('correo.dos');
+    $token = CuentaCorreoService::crearToken($id, 'activacion');
+
+    Conexion::obtener()
+        ->prepare("UPDATE token_usuario SET expira = now() - interval '1 day' WHERE id_usuario = :id")
+        ->execute([':id' => $id]);
+
+    esperarRechazo(fn () => CuentaCorreoService::definirClave($token, 'Nueva2027'), 'no es válido');
+}];
+
+$pruebas[] = ['C3', 'Una contraseña débil se rechaza sin gastar el enlace', function () {
+    $id = crearUsuarioDePrueba('correo.tres');
+    $token = CuentaCorreoService::crearToken($id, 'recuperacion');
+
+    $rechazada = false;
+    try {
+        CuentaCorreoService::definirClave($token, 'solonumeros');
+    } catch (ReglaException $e) {
+        $rechazada = true;
+    }
+
+    afirmar($rechazada, 'Se aceptó una contraseña sin números y letras.');
+    afirmar(CuentaCorreoService::validarToken($token) !== null,
+        'La contraseña débil gastó el enlace; debía seguir sirviendo.');
+}];
 
 $pasaron = 0;
 

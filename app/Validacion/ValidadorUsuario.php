@@ -15,10 +15,10 @@ final class ValidadorUsuario
 {
     /**
      * @param array<string, mixed> $d nombre_usuario, correo, nombres, apellidos, rol, id_medico,
-     *                                id_paciente, puede_marcar_atendida, clave (opcional al editar)
+     *                                id_paciente, puede_marcar_atendida
      * @return array<string, string>
      */
-    public static function usuario(array $d, bool $nueva): array
+    public static function usuario(array $d): array
     {
         $errores = [];
 
@@ -53,14 +53,6 @@ final class ValidadorUsuario
 
         if ($rol === 4 && (int) $d['id_paciente'] <= 0) {
             $errores['id_paciente'] = 'El rol Paciente necesita una ficha de paciente vinculada.';
-        }
-
-        $clave = (string) ($d['clave'] ?? '');
-        if ($nueva || $clave !== '') {
-            $errorClave = Validador::clave($clave);
-            if ($errorClave !== null) {
-                $errores['clave'] = $errorClave;
-            }
         }
 
         return $errores;

@@ -47,6 +47,9 @@ final class Conexion
 
         $nombre = self::$nombreBase ?? $base['nombre'];
         $dsn = sprintf('pgsql:host=%s;port=%s;dbname=%s', $base['host'], $base['puerto'], $nombre);
+        if ($base['sslmode'] !== '') {
+            $dsn .= ';sslmode=' . $base['sslmode'];
+        }
 
         try {
             $pdo = new PDO($dsn, $base['usuario'], $base['clave'], [
