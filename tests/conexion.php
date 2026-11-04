@@ -1,31 +1,68 @@
 <?php
 declare(strict_types=1);
 
+namespace App\Datos;
+
+use PDO;
+use PDOException;
+use RuntimeException;
+
 /**
- * Prueba de conexión a la base de datos.
+ * Conexión PDO única a PostgreSQL para toda la aplicación.
  *
- * Se ejecuta desde la consola de XAMPP, no desde el navegador:
- *   php tests/conexion.php
- *
- * Resultado esperado:
- *   Conexión correcta. Roles en la base: 4
- *   Zona horaria de la sesión: (la que puso en config/local.php)
+ * - Los errores de base de datos se lanzan como excepciones (ERRMODE_EXCEPTION).
+ * - Los resultados vienen como arreglos asociativos.
+ * - La zona horaria de la sesión se toma de config/app.php.
  */
+final class Conexion
+{
+    private static ?PDO $pdo = null;
 
-require dirname(__DIR__) . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'arranque.php';
+    /** Nombre de base que reemplaza al de config. Solo lo usan las pruebas automáticas. */
+    private static ?string $nombreBase = null;
 
-use App\Datos\Conexion;
+    public static function obtener(): PDO
+    {
+        if (self::$pdo === null) {
+            self::$pdo = self::crear();
+        }
 
-try {
-    $pdo = Conexion::obtener();
+        return self::$pdo;
+    }
 
-    $fila = $pdo->query('SELECT COUNT(*) AS total FROM rol')->fetch();
-    echo "Conexión correcta. Roles en la base: {$fila['total']}\n";
+    /**
+     * Cambia la base de datos que usará la conexión. Cierra la conexión actual para que
+     * la siguiente llamada a obtener() se conecte a la nueva base.
+     */
+    public static function usarBase(string $nombre): void
+    {
+        self::$nombreBase = $nombre;
+        self::$pdo = null;
+    }
 
-    $zona = $pdo->query('SHOW TIME ZONE')->fetchColumn();
-    echo "Zona horaria de la sesión: {$zona}\n";
-} catch (Throwable $e) {
-    // Aquí sí se muestra el mensaje, porque es una prueba en la consola del desarrollador.
-    echo 'ERROR: ' . $e->getMessage() . "\n";
-    exit(1);
+    private static function crear(): PDO
+    {
+        $config = require dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'app.php';
+        $base = $config['base'];
+
+        $nombre = self::$nombreBase ?? $base['nombre'];
+        $dsn = sprintf('pgsql:host=%s;port=%s;dbname=%s', $base['host'], $base['puerto'], $nombre);
+
+        try {
+            $pdo = new PDO($dsn, $base['usuario'], $base['clave'], [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES => false,
+            ]);
+        } catch (PDOException $e) {
+            throw new RuntimeException('No se pudo conectar con la base de datos. Revise config/local.php.', 0, $e);
+        }
+
+        // Zona horaria de PHP y de la sesión de PostgreSQL. Las páginas calculan "hoy" y las fechas
+        // por defecto con date(), así que PHP debe usar la misma zona que la base.
+        date_default_timezone_set($config['zona_horaria']);
+        $pdo->prepare('SET TIME ZONE :zona')->execute([':zona' => $config['zona_horaria']]);
+
+        return $pdo;
+    }
 }

@@ -8,23 +8,19 @@ use PDOException;
 use RuntimeException;
 
 /**
- * Acceso a datos: conexión a PostgreSQL con PDO y el controlador pdo_pgsql.
+ * Conexión PDO única a PostgreSQL para toda la aplicación.
  *
- * Cumple con:
- *  - Sección 7: PDO con pdo_pgsql y consultas parametrizadas.
- *  - Sección 7: manejo de errores sin mostrar credenciales ni detalles internos.
- *  - RN14: los datos se guardan de forma persistente en PostgreSQL.
- *  - RF06, RF10 y RN06: PHP y PostgreSQL usan la misma zona horaria, para que
- *    las comparaciones de fecha y hora den el mismo resultado en ambos lados.
- *
- * Esta clase es la única que conoce la cadena de conexión.
+ * - Los errores de base de datos se lanzan como excepciones (ERRMODE_EXCEPTION).
+ * - Los resultados vienen como arreglos asociativos.
+ * - La zona horaria de la sesión se toma de config/app.php.
  */
 final class Conexion
 {
-    /** Conexión única que se reutiliza durante la misma petición. */
     private static ?PDO $pdo = null;
 
-    /** Devuelve la conexión y la crea solo la primera vez. */
+    /** Nombre de base que reemplaza al de config. Solo lo usan las pruebas automáticas. */
+    private static ?string $nombreBase = null;
+
     public static function obtener(): PDO
     {
         if (self::$pdo === null) {
@@ -34,34 +30,39 @@ final class Conexion
         return self::$pdo;
     }
 
-    /** Crea la conexión y configura la zona horaria de la sesión. */
+    /**
+     * Cambia la base de datos que usará la conexión. Cierra la conexión actual para que
+     * la siguiente llamada a obtener() se conecte a la nueva base.
+     */
+    public static function usarBase(string $nombre): void
+    {
+        self::$nombreBase = $nombre;
+        self::$pdo = null;
+    }
+
     private static function crear(): PDO
     {
-        $raiz = dirname(__DIR__, 2);
-        $config = require $raiz . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'app.php';
+        $config = require dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'app.php';
         $base = $config['base'];
 
-        // Zona horaria de PHP: la misma que se pondrá en la sesión de PostgreSQL.
-        date_default_timezone_set($config['zona_horaria']);
-
-        $dsn = sprintf('pgsql:host=%s;port=%s;dbname=%s', $base['host'], $base['puerto'], $base['nombre']);
+        $nombre = self::$nombreBase ?? $base['nombre'];
+        $dsn = sprintf('pgsql:host=%s;port=%s;dbname=%s', $base['host'], $base['puerto'], $nombre);
 
         try {
             $pdo = new PDO($dsn, $base['usuario'], $base['clave'], [
-                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                // Consultas preparadas de verdad: PostgreSQL recibe la sentencia y los datos por separado.
-                PDO::ATTR_EMULATE_PREPARES   => false,
+                PDO::ATTR_EMULATE_PREPARES => false,
             ]);
-
-            // El valor se enlaza como parámetro, no se concatena en el SQL.
-            $zona = $pdo->prepare("SELECT set_config('TimeZone', :zona, false)");
-            $zona->execute([':zona' => $config['zona_horaria']]);
         } catch (PDOException $e) {
-            // El detalle técnico va solo al log del servidor.
-            error_log('[citas-clinica] Error de conexión a PostgreSQL: ' . $e->getMessage());
-            throw new RuntimeException('No se pudo conectar con la base de datos. Intente más tarde.');
+            throw new RuntimeException('No se pudo conectar con la base de datos. Revise config/local.php.', 0, $e);
         }
+
+        // Zona horaria de PHP y de la sesión de PostgreSQL. Las páginas calculan "hoy" y las fechas
+        // por defecto con date(), así que PHP debe usar la misma zona que la base.
+        date_default_timezone_set($config['zona_horaria']);
+        // SET no acepta parámetros enlazados en PostgreSQL; set_config() sí.
+        $pdo->prepare("SELECT set_config('TimeZone', :zona, false)")->execute([':zona' => $config['zona_horaria']]);
 
         return $pdo;
     }

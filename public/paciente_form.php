@@ -9,7 +9,6 @@ use App\Servicios\PacienteService;
 use App\Servicios\ReglaException;
 use App\Validacion\Validador;
 use App\Vistas\Plantilla;
-use RuntimeException;
 
 Sesion::iniciar();
 Sesion::requerirRol([Roles::RECEPCIONISTA]);

@@ -4,9 +4,8 @@ declare(strict_types=1);
 namespace App\Servicios;
 
 use App\Datos\Conexion;
+use App\Datos\ErroresBD;
 use PDOException;
-use RuntimeException;
-use Throwable;
 
 /**
  * Gestión de pacientes (RF02, RF12, RN01, RN11).
@@ -90,7 +89,7 @@ final class PacienteService
 
             return (int) $consulta->fetchColumn();
         } catch (PDOException $e) {
-            throw self::traducir($e);
+            throw ErroresBD::traducir($e, ['23505' => 'Ya existe un paciente con ese CI.']);
         }
     }
 
@@ -115,7 +114,7 @@ final class PacienteService
             $parametros[':id_paciente'] = $id;
             $consulta->execute($parametros);
         } catch (PDOException $e) {
-            throw self::traducir($e);
+            throw ErroresBD::traducir($e, ['23505' => 'Ya existe un paciente con ese CI.']);
         }
     }
 
@@ -168,20 +167,4 @@ final class PacienteService
         return $parametros;
     }
 
-    /**
-     * Convierte un error de la base en un error que se puede mostrar.
-     * La CI duplicada tiene su propio mensaje. Cualquier otro error se registra en el log
-     * y el usuario recibe un mensaje genérico (sección 7).
-     */
-    private static function traducir(PDOException $e): Throwable
-    {
-        // 23505 = violación de restricción única
-        if (($e->errorInfo[0] ?? '') === '23505') {
-            return new ReglaException('Ya existe un paciente con ese CI.');
-        }
-
-        error_log('[citas-clinica] Error de base de datos en pacientes: ' . $e->getMessage());
-
-        return new RuntimeException('No se pudo guardar la información. Intente más tarde.');
-    }
 }

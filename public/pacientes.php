@@ -7,7 +7,6 @@ use App\Seguridad\Roles;
 use App\Seguridad\Sesion;
 use App\Servicios\PacienteService;
 use App\Vistas\Plantilla;
-use RuntimeException;
 
 Sesion::iniciar();
 Sesion::requerirRol([Roles::RECEPCIONISTA]);

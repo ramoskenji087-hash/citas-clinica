@@ -6,7 +6,6 @@ require dirname(__DIR__) . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . '
 use App\Seguridad\Roles;
 use App\Seguridad\Sesion;
 use App\Servicios\PacienteService;
-use RuntimeException;
 
 Sesion::iniciar();
 Sesion::requerirRol([Roles::RECEPCIONISTA]);

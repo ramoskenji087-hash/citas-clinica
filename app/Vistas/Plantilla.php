@@ -65,6 +65,7 @@ final class Plantilla
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/estilos.css">
+  <link rel="stylesheet" href="assets/css/responsivo.css">
 </head>
 <body>
 <header class="cabecera">
@@ -78,7 +79,7 @@ HTML;
     /** Cierra la página: el contenido de main, el script del menú y el pie. */
     public static function fin(): void
     {
-        echo "</main>\n<script src=\"assets/js/menu.js\"></script>\n</body>\n</html>\n";
+        echo "</main>\n<script src=\"assets/js/menu.js\"></script>\n<script src=\"assets/js/validacion.js\"></script>\n</body>\n</html>\n";
     }
 
     /**

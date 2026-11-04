@@ -1,0 +1,88 @@
+/* Ajustes de diseño para celular y tabletas (bloque 10).
+   Se carga después de estilos.css, así que estas reglas tienen prioridad. */
+
+/* Áreas de toque de al menos 44 px, recomendadas para pantallas táctiles. */
+.btn,
+.boton-menu,
+.nav-movil a {
+  min-height: 44px;
+}
+
+/* Foco visible al navegar con teclado (accesibilidad). */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #0E5A6E;
+  outline-offset: 2px;
+}
+
+/* Imágenes y bloques anchos nunca deben obligar a desplazar toda la página de lado. */
+.pagina img {
+  max-width: 100%;
+  height: auto;
+}
+
+.pagina table,
+.pagina pre {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* Grupo de opciones (por ejemplo, el permiso del médico en usuario_form.php). */
+fieldset.grupo {
+  border: 1px solid #B8C4CC;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 16px 0;
+  max-width: 760px;
+}
+
+fieldset.grupo legend {
+  font-weight: 600;
+  padding: 0 6px;
+}
+
+label.opcion {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+label.opcion input[type="checkbox"] {
+  margin-top: 4px;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+}
+
+/* Celular: botones y filas de acciones que se acomodan en varias líneas. */
+@media (max-width: 899px) {
+  .acciones,
+  .acciones-fila {
+    flex-wrap: wrap;
+  }
+
+  .acciones-fila form {
+    margin: 0;
+  }
+
+  .lista li {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 599px) {
+  .acciones .btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .acciones-fila .btn {
+    flex: 1 1 auto;
+  }
+}
