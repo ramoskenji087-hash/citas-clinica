@@ -1,6 +1,7 @@
 .git
 .gitattributes
 .gitignore
+.htaccess
 config/local.php
 tests
 docs
