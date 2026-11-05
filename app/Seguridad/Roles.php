@@ -68,6 +68,7 @@ final class Roles
                 ['texto' => 'Mis citas',            'pagina' => 'mis_citas.php'],
                 ['texto' => 'Mis datos',            'pagina' => 'mis_datos.php'],
                 ['texto' => 'Mi ficha médica',      'pagina' => 'mi_ficha.php'],
+                ['texto' => 'Reservar cita',        'pagina' => 'paciente_reservar.php'],
                 ['texto' => 'Cambiar contraseña',   'pagina' => 'cambiar_clave.php'],
             ],
             default => [],

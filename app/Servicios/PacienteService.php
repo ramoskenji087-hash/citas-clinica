@@ -140,7 +140,7 @@ final class PacienteService
     public static function historial(int $idPaciente): array
     {
         $consulta = Conexion::obtener()->prepare(
-            "SELECT c.codigo, c.inicio, c.estado, c.motivo_cancelacion, c.fecha_creacion,
+            "SELECT c.codigo, c.inicio, c.estado, c.motivo_cancelacion, c.fecha_creacion, c.modalidad,
                     m.nombres || ' ' || m.apellidos AS medico,
                     e.nombre AS especialidad
                FROM cita c

@@ -72,11 +72,24 @@ $especialidades = [];
 $medicos = [];
 $horas = [];
 $mostrarHoras = false;
+$atencion = [];
 
 try {
     $pacientes = CitaService::pacientesActivos();
     $especialidades = EspecialidadService::listarActivas();
-    $medicos = CitaService::medicosActivos($datos['especialidad']);
+    // Sin especialidad no se muestran médicos: así no aparecen los que no atienden lo que se busca.
+    $medicos = $datos['especialidad'] > 0 ? CitaService::medicosActivos($datos['especialidad']) : [];
+
+    // Si el médico elegido no atiende la especialidad (por ejemplo, después de cambiarla), se quita.
+    $idsMedicos = array_map(static fn (array $m): int => (int) $m['id_medico'], $medicos);
+    if ($datos['medico'] > 0 && !in_array($datos['medico'], $idsMedicos, true)) {
+        $datos['medico'] = 0;
+        if ($datos['especialidad'] > 0) {
+            $errorGeneral = $errorGeneral ?? 'El médico elegido no atiende esa especialidad. Elija otro.';
+        }
+    }
+
+    $atencion = $datos['medico'] > 0 ? CitaService::horariosDelMedico($datos['medico']) : [];
 
     $mostrarHoras = $datos['paciente'] > 0
         && $datos['especialidad'] > 0
@@ -130,8 +143,8 @@ Plantilla::inicio('Nueva cita');
 
     <div class="campo">
       <label for="especialidad">Especialidad</label>
-      <select id="especialidad" name="especialidad">
-        <option value="">Todas las especialidades</option>
+      <select id="especialidad" name="especialidad" onchange="this.form.submit()">
+        <option value="">Seleccione una especialidad</option>
         <?php foreach ($especialidades as $e): ?>
           <option value="<?= (int) $e['id_especialidad'] ?>"<?= (int) $e['id_especialidad'] === $datos['especialidad'] ? ' selected' : '' ?>>
             <?= Plantilla::e($e['nombre']) ?>
@@ -142,8 +155,8 @@ Plantilla::inicio('Nueva cita');
 
     <div class="campo">
       <label for="medico">Médico</label>
-      <select id="medico" name="medico">
-        <option value="">Seleccione un médico</option>
+      <select id="medico" name="medico" onchange="this.form.submit()">
+        <option value=""><?= $datos['especialidad'] > 0 ? 'Seleccione un médico' : 'Primero elija una especialidad' ?></option>
         <?php foreach ($medicos as $m): ?>
           <option value="<?= (int) $m['id_medico'] ?>"<?= (int) $m['id_medico'] === $datos['medico'] ? ' selected' : '' ?>>
             Dr(a). <?= Plantilla::e($m['nombres'] . ' ' . $m['apellidos']) ?>
@@ -154,7 +167,7 @@ Plantilla::inicio('Nueva cita');
 
     <div class="campo">
       <label for="fecha">Fecha de la cita</label>
-      <input id="fecha" name="fecha" type="date" value="<?= Plantilla::e($datos['fecha']) ?>">
+      <input id="fecha" name="fecha" type="date" value="<?= Plantilla::e($datos['fecha']) ?>" onchange="this.form.submit()">
     </div>
   </div>
 
@@ -162,6 +175,20 @@ Plantilla::inicio('Nueva cita');
     <button class="btn btn-principal" type="submit">Ver horas libres</button>
   </div>
 </form>
+
+<?php if ($atencion !== []): ?>
+  <?php $nombresDias = [1 => 'lunes', 2 => 'martes', 3 => 'miércoles', 4 => 'jueves', 5 => 'viernes', 6 => 'sábado', 7 => 'domingo']; ?>
+  <div class="aviso aviso-ok">
+    <p>Este médico atiende:</p>
+    <ul>
+      <?php foreach ($atencion as $bloque): ?>
+        <li><?= $nombresDias[(int) $bloque['dia']] ?> de <?= Plantilla::e($bloque['hora_inicio']) ?> a <?= Plantilla::e($bloque['hora_fin']) ?> (citas de <?= (int) $bloque['duracion'] ?> minutos)</li>
+      <?php endforeach; ?>
+    </ul>
+  </div>
+<?php elseif ($datos['medico'] > 0): ?>
+  <p class="aviso aviso-error">Este médico no tiene horario configurado.</p>
+<?php endif; ?>
 
 <?php if ($mostrarHoras): ?>
   <h2>Paso 2: hora libre</h2>

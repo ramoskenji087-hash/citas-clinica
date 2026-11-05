@@ -51,7 +51,7 @@ Plantilla::inicio('Mis citas');
         <div class="cuerpo">
           <p class="nombre"><?= Plantilla::e(date('d/m/Y H:i', strtotime((string) $c['inicio']))) ?></p>
           <p class="detalle">
-            <?= Plantilla::e($c['codigo']) ?> · <?= Plantilla::e($c['especialidad']) ?> · Dr(a). <?= Plantilla::e($c['medico']) ?>
+            <?= Plantilla::e($c['codigo']) ?> · <?= Plantilla::e($c['especialidad']) ?> · Dr(a). <?= Plantilla::e($c['medico']) ?> · <?= Plantilla::e($c['modalidad']) ?>
           </p>
           <p class="detalle">Registrada el <?= Plantilla::e(date('d/m/Y', strtotime((string) $c['fecha_creacion']))) ?></p>
           <?php if ($c['motivo_cancelacion'] !== null): ?>

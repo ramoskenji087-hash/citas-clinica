@@ -248,6 +248,11 @@ CREATE TABLE cita (
         WHERE (estado <> 'Cancelada')
 );
 
+-- Paquete 2: modalidad de la atención (presencial o virtual).
+ALTER TABLE cita
+    ADD COLUMN modalidad VARCHAR(12) NOT NULL DEFAULT 'Presencial'
+        CHECK (modalidad IN ('Presencial', 'Virtual'));
+
 -- Índices pedidos por el diseño: agenda por médico y fecha, historial por
 -- paciente y filtros por estado.
 CREATE INDEX ix_cita_medico_inicio ON cita (id_medico, inicio);

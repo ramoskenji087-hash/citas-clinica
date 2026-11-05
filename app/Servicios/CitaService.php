@@ -55,6 +55,27 @@ final class CitaService
     }
 
     /**
+     * Días y horas en que atiende un médico. Se muestra al paciente antes de elegir la hora.
+     *
+     * @return array<int, array{dia: int, hora_inicio: string, hora_fin: string, duracion: int}>
+     */
+    public static function horariosDelMedico(int $idMedico): array
+    {
+        $consulta = Conexion::obtener()->prepare(
+            "SELECT dia_semana AS dia,
+                    to_char(hora_inicio, 'HH24:MI') AS hora_inicio,
+                    to_char(hora_fin, 'HH24:MI') AS hora_fin,
+                    duracion_cita AS duracion
+               FROM horario_medico
+              WHERE id_medico = :id_medico
+              ORDER BY dia_semana, hora_inicio"
+        );
+        $consulta->execute([':id_medico' => $idMedico]);
+
+        return $consulta->fetchAll();
+    }
+
+    /**
      * Horas libres de un médico en una fecha. Cada elemento indica la hora de inicio,
      * la hora de fin y la duración de una cita posible.
      *
@@ -144,6 +165,12 @@ final class CitaService
         $hora = (string) $datos['hora'];
         $motivo = trim((string) ($datos['motivo'] ?? ''));
 
+        // Modalidad de la atención (sección 3.4 del documento): presencial o virtual.
+        $modalidad = (string) ($datos['modalidad'] ?? 'Presencial');
+        if (!in_array($modalidad, ['Presencial', 'Virtual'], true)) {
+            throw new ReglaException('Seleccione la modalidad de la cita: presencial o virtual.');
+        }
+
         try {
             $pdo->beginTransaction();
 
@@ -172,8 +199,8 @@ final class CitaService
                 ->format('Y-m-d H:i:s');
 
             $consulta = $pdo->prepare(
-                "INSERT INTO cita (id_paciente, id_medico, id_especialidad, inicio, fin, motivo, estado, id_usuario_registro)
-                 VALUES (:paciente, :medico, :especialidad, :inicio, :fin, :motivo, 'Programada', :usuario)
+                "INSERT INTO cita (id_paciente, id_medico, id_especialidad, inicio, fin, motivo, estado, id_usuario_registro, modalidad)
+                 VALUES (:paciente, :medico, :especialidad, :inicio, :fin, :motivo, 'Programada', :usuario, :modalidad)
                  RETURNING id_cita, codigo"
             );
             $consulta->execute([
@@ -184,6 +211,7 @@ final class CitaService
                 ':fin' => $fin,
                 ':motivo' => $motivo === '' ? null : $motivo,
                 ':usuario' => $idUsuario,
+                ':modalidad' => $modalidad,
             ]);
             $fila = $consulta->fetch();
 

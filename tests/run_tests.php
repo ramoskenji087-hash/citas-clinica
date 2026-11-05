@@ -33,6 +33,7 @@ use App\Servicios\AdministracionUsuariosService;
 use App\Servicios\CuentaCorreoService;
 use App\Servicios\ReglaException;
 use App\Servicios\PortalPacienteService;
+use App\Servicios\RegistroPacienteService;
 use App\Validacion\ValidadorPortal;
 
 const BASE_PRUEBAS = 'citas_clinica_pruebas';
@@ -621,6 +622,90 @@ $pruebas[] = ['F4', 'Por defecto, ningún médico ve el motivo de las citas', fu
 
     afirmar(AdministracionUsuariosService::puedeVerMotivo($ctx->idMedicoUsuario) === false,
         'El médico vio el motivo sin tener el permiso.');
+}];
+
+// --- Paquete 2: modalidad de la cita y registro propio del paciente ----------
+
+$pruebas[] = ['G1', 'La modalidad virtual de una cita se guarda', function () {
+    global $ctx;
+
+    $cita = CitaService::registrar([
+        'paciente' => $ctx->idPaciente1, 'especialidad' => 1, 'medico' => 1,
+        'fecha' => FECHA_LUNES, 'hora' => '08:30', 'motivo' => 'Consulta virtual', 'modalidad' => 'Virtual',
+    ], $ctx->idRecepcion);
+
+    $modalidad = Conexion::obtener()
+        ->query('SELECT modalidad FROM cita WHERE id_cita = ' . (int) $cita['id'])
+        ->fetchColumn();
+    afirmar($modalidad === 'Virtual', 'La modalidad no se guardó como Virtual.');
+}];
+
+$pruebas[] = ['G2', 'Una modalidad que no es presencial ni virtual se rechaza', function () {
+    global $ctx;
+
+    esperarRechazo(fn () => CitaService::registrar([
+        'paciente' => $ctx->idPaciente1, 'especialidad' => 1, 'medico' => 1,
+        'fecha' => FECHA_LUNES, 'hora' => '09:30', 'modalidad' => 'Mixta',
+    ], $ctx->idRecepcion), 'modalidad');
+}];
+
+$pruebas[] = ['G3', 'El registro propio crea la ficha y la cuenta vinculadas', function () {
+    $resultado = RegistroPacienteService::registrar(array_merge(
+        datosPaciente('9900888', 'Lucia', 'Mamani'),
+        ['nombre_usuario' => 'lucia.mamani', 'correo' => 'lucia.mamani@ejemplo.com']
+    ));
+
+    $usuario = Conexion::obtener()
+        ->query('SELECT id_paciente, id_rol FROM usuario WHERE id_usuario = ' . (int) $resultado['id_usuario'])
+        ->fetch();
+    afirmar((int) $usuario['id_paciente'] === $resultado['id_paciente'], 'La cuenta no quedó vinculada a la ficha.');
+    afirmar((int) $usuario['id_rol'] === Roles::PACIENTE, 'La cuenta nueva no tiene el rol Paciente.');
+}];
+
+$pruebas[] = ['G4', 'Un registro con una CI que ya tiene cuenta se rechaza', function () {
+    global $ctx;
+
+    $ci = PacienteService::obtener($ctx->idPaciente1)['ci'];
+
+    esperarRechazo(fn () => RegistroPacienteService::registrar(array_merge(
+        datosPaciente((string) $ci, 'Otra', 'Persona'),
+        ['nombre_usuario' => 'otra.persona', 'correo' => 'otra.persona@ejemplo.com']
+    )), 'Ya existe una cuenta para esa CI');
+}];
+
+$pruebas[] = ['G5', 'Una ficha de Recepción sin cuenta solo se vincula con el mismo correo', function () {
+    global $ctx;
+
+    $ci = Conexion::obtener()
+        ->query('SELECT ci FROM paciente WHERE id_paciente = ' . (int) $ctx->idPaciente2)
+        ->fetchColumn();
+
+    esperarRechazo(fn () => RegistroPacienteService::registrar(array_merge(
+        datosPaciente((string) $ci, 'Luis', 'Herrera'),
+        ['nombre_usuario' => 'luis.herrera', 'correo' => 'nadie@ejemplo.com']
+    )), 'no coinciden');
+}];
+
+$pruebas[] = ['G6', 'Un médico no se puede reservar con una especialidad que no atiende', function () {
+    global $ctx;
+
+    $otra = Conexion::obtener()
+        ->query('SELECT e.id_especialidad FROM especialidad e
+                  WHERE e.activo AND e.id_especialidad NOT IN
+                        (SELECT id_especialidad FROM medico_especialidad WHERE id_medico = 1)
+                  ORDER BY e.id_especialidad LIMIT 1')
+        ->fetchColumn();
+    afirmar($otra !== false, 'No hay una especialidad activa que el médico 1 no atienda.');
+
+    esperarRechazo(fn () => CitaService::registrar([
+        'paciente' => $ctx->idPaciente2, 'especialidad' => (int) $otra, 'medico' => 1,
+        'fecha' => FECHA_LUNES, 'hora' => '08:00', 'modalidad' => 'Presencial',
+    ], $ctx->idRecepcion), 'no atiende');
+}];
+
+$pruebas[] = ['G7', 'El horario de atención de un médico se puede consultar', function () {
+    $bloques = CitaService::horariosDelMedico(1);
+    afirmar(count($bloques) >= 2, 'El médico 1 debería tener al menos dos bloques de atención.');
 }];
 
 $pasaron = 0;
