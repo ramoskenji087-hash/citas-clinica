@@ -32,6 +32,8 @@ use App\Validacion\ValidadorUsuario;
 use App\Servicios\AdministracionUsuariosService;
 use App\Servicios\CuentaCorreoService;
 use App\Servicios\ReglaException;
+use App\Servicios\PortalPacienteService;
+use App\Validacion\ValidadorPortal;
 
 const BASE_PRUEBAS = 'citas_clinica_pruebas';
 const FECHA_LUNES = '2027-03-01';   // lunes: Juan Pérez atiende de 08:00 a 12:00
@@ -570,6 +572,55 @@ $pruebas[] = ['C3', 'Una contraseña débil se rechaza sin gastar el enlace', fu
     afirmar($rechazada, 'Se aceptó una contraseña sin números y letras.');
     afirmar(CuentaCorreoService::validarToken($token) !== null,
         'La contraseña débil gastó el enlace; debía seguir sirviendo.');
+}];
+
+// --- Paquete 1: ficha médica, menú del administrador y permisos -------------
+
+$pruebas[] = ['F1', 'El administrador tiene el menú de pacientes', function () {
+    $paginas = array_column(Roles::menu(Roles::ADMINISTRADOR), 'pagina');
+    afirmar(in_array('pacientes.php', $paginas, true), 'El menú del administrador no incluye Pacientes.');
+}];
+
+$pruebas[] = ['F2', 'La ficha médica guarda los datos y convierte los campos vacíos en nulos', function () {
+    global $ctx;
+
+    PortalPacienteService::actualizarFicha($ctx->idPaciente1, [
+        'tipo_sangre' => 'O+',
+        'alergias' => 'Penicilina',
+        'enfermedades_cronicas' => '',
+        'medicamentos' => '',
+        'antecedentes' => '',
+        'contacto_emergencia_nombre' => 'Ana Ruiz',
+        'contacto_emergencia_parentesco' => 'Madre',
+        'contacto_emergencia_telefono' => '70000000',
+        'recibir_notificaciones' => true,
+        'compartir_historial_medico' => false,
+    ]);
+
+    $ficha = PortalPacienteService::ficha($ctx->idPaciente1);
+    afirmar($ficha['tipo_sangre'] === 'O+', 'El tipo de sangre no se guardó.');
+    afirmar($ficha['alergias'] === 'Penicilina', 'Las alergias no se guardaron.');
+    afirmar($ficha['enfermedades_cronicas'] === null, 'Un campo vacío debía quedar como NULL.');
+    afirmar((int) $ficha['recibir_notificaciones'] === 1, 'La preferencia de notificaciones no se guardó.');
+}];
+
+$pruebas[] = ['F3', 'Un contacto de emergencia incompleto se rechaza', function () {
+    $errores = ValidadorPortal::ficha([
+        'tipo_sangre' => '', 'alergias' => '', 'enfermedades_cronicas' => '', 'medicamentos' => '', 'antecedentes' => '',
+        'contacto_emergencia_nombre' => 'Ana Ruiz',
+        'contacto_emergencia_parentesco' => '',
+        'contacto_emergencia_telefono' => '',
+    ]);
+
+    afirmar(isset($errores['contacto_emergencia_parentesco']), 'No se pidió el parentesco.');
+    afirmar(isset($errores['contacto_emergencia_telefono']), 'No se pidió el teléfono de emergencia.');
+}];
+
+$pruebas[] = ['F4', 'Por defecto, ningún médico ve el motivo de las citas', function () {
+    global $ctx;
+
+    afirmar(AdministracionUsuariosService::puedeVerMotivo($ctx->idMedicoUsuario) === false,
+        'El médico vio el motivo sin tener el permiso.');
 }];
 
 $pasaron = 0;

@@ -9,7 +9,7 @@ use App\Servicios\PacienteService;
 use App\Vistas\Plantilla;
 
 Sesion::iniciar();
-Sesion::requerirRol([Roles::RECEPCIONISTA]);
+Sesion::requerirRol([Roles::RECEPCIONISTA, Roles::ADMINISTRADOR]);
 
 $id = is_string($_GET['id'] ?? null) && ctype_digit($_GET['id']) ? (int) $_GET['id'] : 0;
 $paciente = null;

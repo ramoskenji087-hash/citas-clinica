@@ -51,6 +51,7 @@ final class AgendaService
                     to_char(c.fin, 'HH24:MI') AS hora_fin,
                     c.motivo, c.motivo_cancelacion,
                     p.nombres || ' ' || p.apellidos AS paciente,
+                    p.ci AS paciente_ci, p.telefono AS paciente_telefono,
                     m.nombres || ' ' || m.apellidos AS medico,
                     e.nombre AS especialidad
                FROM cita c

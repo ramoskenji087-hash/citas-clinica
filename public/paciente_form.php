@@ -11,7 +11,7 @@ use App\Validacion\Validador;
 use App\Vistas\Plantilla;
 
 Sesion::iniciar();
-Sesion::requerirRol([Roles::RECEPCIONISTA]);
+Sesion::requerirRol([Roles::RECEPCIONISTA, Roles::ADMINISTRADOR]);
 
 // Con ?id= se modifica un paciente existente; sin id se registra uno nuevo.
 $id = is_string($_GET['id'] ?? null) && ctype_digit($_GET['id']) ? (int) $_GET['id'] : null;

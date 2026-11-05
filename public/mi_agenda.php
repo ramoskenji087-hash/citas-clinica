@@ -7,6 +7,7 @@ use App\Datos\Conexion;
 use App\Seguridad\Roles;
 use App\Seguridad\Sesion;
 use App\Servicios\AgendaService;
+use App\Servicios\AdministracionUsuariosService;
 use App\Servicios\CitaEstadoService;
 use App\Servicios\ReglaException;
 use App\Validacion\ValidadorGestionCita;
@@ -59,10 +60,12 @@ $estado = in_array($estadoParam, AgendaService::ESTADOS, true) ? $estadoParam : 
 
 // ¿Tiene permiso para marcar citas como atendidas? Se consulta en cada carga (RN12).
 $puedeMarcar = false;
+$puedeVerMotivo = false;
 $citas = [];
 
 try {
     $puedeMarcar = CitaEstadoService::puedeMarcarAtendida((int) $usuario['id']);
+    $puedeVerMotivo = AdministracionUsuariosService::puedeVerMotivo((int) $usuario['id']);
     $citas = AgendaService::listar($fecha, $idMedico, $estado);
 } catch (\RuntimeException $e) {
     $errorGeneral = $errorGeneral ?? $e->getMessage();
@@ -125,7 +128,8 @@ Plantilla::inicio('Mi agenda');
         <div class="cuerpo">
           <p class="nombre"><?= Plantilla::e($c['hora_inicio']) ?> a <?= Plantilla::e($c['hora_fin']) ?> · <?= Plantilla::e($c['paciente']) ?></p>
           <p class="detalle"><?= Plantilla::e($c['codigo']) ?> · <?= Plantilla::e($c['especialidad']) ?></p>
-          <?php if ((string) $c['motivo'] !== ''): ?>
+          <p class="detalle">CI <?= Plantilla::e($c['paciente_ci']) ?> · Tel. <?= Plantilla::e($c['paciente_telefono']) ?></p>
+          <?php if ($puedeVerMotivo && (string) $c['motivo'] !== ''): ?>
             <p class="detalle">Motivo: <?= Plantilla::e($c['motivo']) ?></p>
           <?php endif; ?>
         </div>

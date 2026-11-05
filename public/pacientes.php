@@ -9,7 +9,7 @@ use App\Servicios\PacienteService;
 use App\Vistas\Plantilla;
 
 Sesion::iniciar();
-Sesion::requerirRol([Roles::RECEPCIONISTA]);
+Sesion::requerirRol([Roles::RECEPCIONISTA, Roles::ADMINISTRADOR]);
 
 // Mensajes que llegan después de guardar o cambiar el estado de un paciente.
 $avisos = [

@@ -8,7 +8,7 @@ use App\Seguridad\Sesion;
 use App\Servicios\PacienteService;
 
 Sesion::iniciar();
-Sesion::requerirRol([Roles::RECEPCIONISTA]);
+Sesion::requerirRol([Roles::RECEPCIONISTA, Roles::ADMINISTRADOR]);
 
 // Solo se acepta POST con token válido: así un enlace de otro sitio no puede desactivar pacientes (CSRF).
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !Sesion::verificarCsrf($_POST['csrf'] ?? null)) {

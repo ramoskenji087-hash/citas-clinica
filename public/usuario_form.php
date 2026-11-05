@@ -20,7 +20,7 @@ $id = is_string($_GET['id'] ?? null) && ctype_digit($_GET['id']) ? (int) $_GET['
 
 $datos = [
     'nombre_usuario' => '', 'correo' => '', 'nombres' => '', 'apellidos' => '',
-    'rol' => 0, 'id_medico' => 0, 'id_paciente' => 0, 'puede_marcar_atendida' => false,
+    'rol' => 0, 'id_medico' => 0, 'id_paciente' => 0, 'puede_marcar_atendida' => false, 'puede_ver_motivo' => false,
 ];
 $errores = [];
 $errorGeneral = null;
@@ -43,6 +43,7 @@ try {
             'id_medico' => (int) ($cuenta['id_medico'] ?? 0),
             'id_paciente' => (int) ($cuenta['id_paciente'] ?? 0),
             'puede_marcar_atendida' => (int) $cuenta['puede_marcar_atendida'] === 1,
+            'puede_ver_motivo' => (int) $cuenta['puede_ver_motivo'] === 1,
         ];
     }
 } catch (\RuntimeException $e) {
@@ -65,6 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'id_medico' => $numero('id_medico'),
             'id_paciente' => $numero('id_paciente'),
             'puede_marcar_atendida' => isset($_POST['puede_marcar_atendida']),
+            'puede_ver_motivo' => isset($_POST['puede_ver_motivo']),
         ];
 
         $errores = ValidadorUsuario::usuario($datos);
@@ -218,6 +220,10 @@ Plantilla::inicio($titulo);
     <label class="opcion">
       <input type="checkbox" name="puede_marcar_atendida" value="1"<?= $datos['puede_marcar_atendida'] ? ' checked' : '' ?>>
       Puede marcar citas como atendidas (solo para el rol Médico)
+    </label>
+    <label class="opcion">
+      <input type="checkbox" name="puede_ver_motivo" value="1"<?= $datos['puede_ver_motivo'] ? ' checked' : '' ?>>
+      Puede ver el motivo de las citas en su agenda (solo para el rol Médico)
     </label>
   </fieldset>
 

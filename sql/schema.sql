@@ -188,6 +188,23 @@ CREATE TABLE token_usuario (
 
 CREATE INDEX ix_token_usuario_usuario ON token_usuario (id_usuario, tipo);
 
+-- Paquete 1: permiso para ver el motivo de las citas, ficha médica, contacto de emergencia
+-- y preferencias del paciente (sección 3 y 3.4 del documento de requisitos).
+ALTER TABLE usuario
+    ADD COLUMN puede_ver_motivo BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE paciente
+    ADD COLUMN tipo_sangre VARCHAR(3) CHECK (tipo_sangre IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')),
+    ADD COLUMN alergias TEXT,
+    ADD COLUMN enfermedades_cronicas TEXT,
+    ADD COLUMN medicamentos TEXT,
+    ADD COLUMN antecedentes TEXT,
+    ADD COLUMN contacto_emergencia_nombre VARCHAR(120),
+    ADD COLUMN contacto_emergencia_parentesco VARCHAR(60),
+    ADD COLUMN contacto_emergencia_telefono VARCHAR(20),
+    ADD COLUMN recibir_notificaciones BOOLEAN NOT NULL DEFAULT TRUE,
+    ADD COLUMN compartir_historial_medico BOOLEAN NOT NULL DEFAULT FALSE;
+
 -- -----------------------------------------------------------------------------
 -- 8. CITA (RF06 a RF10, RN03, RN07, RN09, RN10)
 --    Estados que OCUPAN horario: Programada, Confirmada, Atendida, Inasistencia.

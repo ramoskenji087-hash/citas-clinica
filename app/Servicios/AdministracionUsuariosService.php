@@ -34,12 +34,26 @@ final class AdministracionUsuariosService
         )->fetchAll();
     }
 
+    /** ¿Puede esta cuenta ver el motivo de las citas en su agenda? Solo con permiso (RF11). */
+    public static function puedeVerMotivo(int $idUsuario): bool
+    {
+        $consulta = Conexion::obtener()->prepare(
+            'SELECT puede_ver_motivo::int AS puede_ver_motivo
+               FROM usuario
+              WHERE id_usuario = :id_usuario AND activo = TRUE'
+        );
+        $consulta->execute([':id_usuario' => $idUsuario]);
+        $fila = $consulta->fetch();
+
+        return $fila !== false && (int) $fila['puede_ver_motivo'] === 1;
+    }
+
     /** Datos de una cuenta, o null si no existe. */
     public static function obtener(int $id): ?array
     {
         $consulta = Conexion::obtener()->prepare(
             'SELECT id_usuario, nombre_usuario, correo, nombres, apellidos, id_rol, id_medico, id_paciente,
-                    puede_marcar_atendida::int AS puede_marcar_atendida, activo::int AS activo
+                    puede_marcar_atendida::int AS puede_marcar_atendida, puede_ver_motivo::int AS puede_ver_motivo, activo::int AS activo
                FROM usuario
               WHERE id_usuario = :id_usuario'
         );
@@ -91,9 +105,9 @@ final class AdministracionUsuariosService
         try {
             $consulta = $pdo->prepare(
                 'INSERT INTO usuario (nombre_usuario, correo, nombres, apellidos, password_hash, id_rol,
-                                      id_medico, id_paciente, puede_marcar_atendida, activo)
+                                      id_medico, id_paciente, puede_marcar_atendida, puede_ver_motivo, activo)
                  VALUES (:nombre_usuario, :correo, :nombres, :apellidos, :hash, :rol,
-                         :medico, :paciente, :permiso, TRUE)
+                         :medico, :paciente, :permiso, :motivo, TRUE)
                  RETURNING id_usuario'
             );
             $consulta->execute(self::parametros($d) + [
@@ -124,7 +138,7 @@ final class AdministracionUsuariosService
         $sql = 'UPDATE usuario
                    SET nombre_usuario = :nombre_usuario, correo = :correo, nombres = :nombres,
                        apellidos = :apellidos, id_rol = :rol, id_medico = :medico,
-                       id_paciente = :paciente, puede_marcar_atendida = :permiso';
+                       id_paciente = :paciente, puede_marcar_atendida = :permiso, puede_ver_motivo = :motivo';
 
         try {
             $pdo->prepare($sql . ' WHERE id_usuario = :id_usuario')->execute($parametros);
@@ -206,6 +220,7 @@ final class AdministracionUsuariosService
             ':medico' => $rol === 3 ? (int) $d['id_medico'] : null,
             ':paciente' => $rol === 4 ? (int) $d['id_paciente'] : null,
             ':permiso' => $rol === 3 && !empty($d['puede_marcar_atendida']) ? 'true' : 'false',
+            ':motivo' => $rol === 3 && !empty($d['puede_ver_motivo']) ? 'true' : 'false',
         ];
     }
 }

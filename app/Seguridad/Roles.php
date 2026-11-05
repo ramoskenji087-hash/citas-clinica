@@ -44,6 +44,7 @@ final class Roles
             self::ADMINISTRADOR => [
                 ['texto' => 'Inicio',               'pagina' => 'inicio.php'],
                 ['texto' => 'Médicos y horarios',   'pagina' => 'medicos.php'],
+                ['texto' => 'Pacientes',            'pagina' => 'pacientes.php'],
                 ['texto' => 'Especialidades',       'pagina' => 'especialidades.php'],
                 ['texto' => 'Usuarios',             'pagina' => 'usuarios.php'],
                 ['texto' => 'Reportes',             'pagina' => 'reportes.php'],
@@ -66,6 +67,7 @@ final class Roles
                 ['texto' => 'Inicio',               'pagina' => 'inicio.php'],
                 ['texto' => 'Mis citas',            'pagina' => 'mis_citas.php'],
                 ['texto' => 'Mis datos',            'pagina' => 'mis_datos.php'],
+                ['texto' => 'Mi ficha médica',      'pagina' => 'mi_ficha.php'],
                 ['texto' => 'Cambiar contraseña',   'pagina' => 'cambiar_clave.php'],
             ],
             default => [],
