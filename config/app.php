@@ -44,6 +44,8 @@ if (!in_array($zona, timezone_identifiers_list(), true)) {
 
 return [
     'nombre_sistema' => 'Clínica Vida Salud',
+    // Clave secreta del programador de recordatorios. En Render: variable CRON_CLAVE.
+    'cron_clave'     => $valor('CRON_CLAVE', 'cron_clave', ''),
     'zona_horaria'   => $zona,
     // Dirección pública de la carpeta public, sin barra final. Se usa para armar los enlaces del correo.
     'url_base'       => rtrim($valor('URL_BASE', 'url_base', 'http://localhost/citas-clinica/public'), '/'),

@@ -30,6 +30,7 @@ $datos = [
     'fecha' => $texto('fecha'),
     'hora' => $texto('hora'),
     'motivo' => $texto('motivo'),
+    'modalidad' => $texto('modalidad') === 'Virtual' ? 'Virtual' : 'Presencial',
 ];
 
 if ($datos['fecha'] === '') {
@@ -202,6 +203,13 @@ Plantilla::inicio('Nueva cita');
       <input type="hidden" name="especialidad" value="<?= $datos['especialidad'] ?>">
       <input type="hidden" name="medico" value="<?= $datos['medico'] ?>">
       <input type="hidden" name="fecha" value="<?= Plantilla::e($datos['fecha']) ?>">
+      <div class="campo">
+        <label for="modalidad">Modalidad de la atención</label>
+        <select id="modalidad" name="modalidad">
+          <option value="Presencial"<?= $datos['modalidad'] === 'Presencial' ? ' selected' : '' ?>>Presencial (en la clínica)</option>
+          <option value="Virtual"<?= $datos['modalidad'] === 'Virtual' ? ' selected' : '' ?>>Virtual (videollamada)</option>
+        </select>
+      </div>
 
       <div class="campo ancho">
         <label for="motivo">Motivo de la consulta (opcional)</label>

@@ -34,6 +34,8 @@ use App\Servicios\CuentaCorreoService;
 use App\Servicios\ReglaException;
 use App\Servicios\PortalPacienteService;
 use App\Servicios\RegistroPacienteService;
+use App\Servicios\RecordatorioService;
+use App\Servicios\HistorialMedicoService;
 use App\Validacion\ValidadorPortal;
 
 const BASE_PRUEBAS = 'citas_clinica_pruebas';
@@ -706,6 +708,50 @@ $pruebas[] = ['G6', 'Un médico no se puede reservar con una especialidad que no
 $pruebas[] = ['G7', 'El horario de atención de un médico se puede consultar', function () {
     $bloques = CitaService::horariosDelMedico(1);
     afirmar(count($bloques) >= 2, 'El médico 1 debería tener al menos dos bloques de atención.');
+}];
+
+// --- Paquete 3: recordatorios y ficha médica compartida ----------------------
+
+$pruebas[] = ['I1', 'Una cita próxima de un paciente que acepta recordatorios aparece como pendiente', function () {
+    $idCita = (int) Conexion::obtener()
+        ->query("SELECT id_cita FROM cita WHERE modalidad = 'Virtual' AND estado = 'Programada' ORDER BY id_cita LIMIT 1")
+        ->fetchColumn();
+    afirmar($idCita > 0, 'No hay una cita virtual programada para probar.');
+
+    $ids = array_map(static fn (array $c): int => (int) $c['id_cita'],
+        RecordatorioService::pendientes(new DateTimeImmutable('2027-03-02 00:00:00')));
+    afirmar(in_array($idCita, $ids, true), 'La cita próxima no aparece entre los recordatorios pendientes.');
+}];
+
+$pruebas[] = ['I2', 'Un recordatorio ya enviado no vuelve a aparecer como pendiente', function () {
+    $idCita = (int) Conexion::obtener()
+        ->query("SELECT id_cita FROM cita WHERE modalidad = 'Virtual' AND estado = 'Programada' ORDER BY id_cita LIMIT 1")
+        ->fetchColumn();
+    RecordatorioService::marcarEnviado($idCita);
+
+    $ids = array_map(static fn (array $c): int => (int) $c['id_cita'],
+        RecordatorioService::pendientes(new DateTimeImmutable('2027-03-02 00:00:00')));
+    afirmar(!in_array($idCita, $ids, true), 'El recordatorio ya enviado sigue pendiente.');
+}];
+
+$pruebas[] = ['I3', 'El médico ve la ficha solo con cita y con permiso del paciente', function () {
+    global $ctx;
+
+    Conexion::obtener()
+        ->prepare('UPDATE paciente SET compartir_historial_medico = TRUE WHERE id_paciente = :id')
+        ->execute([':id' => $ctx->idPaciente1]);
+
+    $ficha = HistorialMedicoService::fichaParaMedico(1, $ctx->idPaciente1);
+    afirmar($ficha !== null && $ficha['alergias'] === 'Penicilina',
+        'El médico con cita no ve la ficha que el paciente comparte.');
+    afirmar(HistorialMedicoService::fichaParaMedico(2, $ctx->idPaciente1) === null,
+        'Un médico sin cita con el paciente vio la ficha.');
+
+    Conexion::obtener()
+        ->prepare('UPDATE paciente SET compartir_historial_medico = FALSE WHERE id_paciente = :id')
+        ->execute([':id' => $ctx->idPaciente1]);
+    afirmar(HistorialMedicoService::fichaParaMedico(1, $ctx->idPaciente1) === null,
+        'Sin permiso del paciente, el médico vio la ficha.');
 }];
 
 $pasaron = 0;

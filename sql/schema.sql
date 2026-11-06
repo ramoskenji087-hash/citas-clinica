@@ -253,6 +253,10 @@ ALTER TABLE cita
     ADD COLUMN modalidad VARCHAR(12) NOT NULL DEFAULT 'Presencial'
         CHECK (modalidad IN ('Presencial', 'Virtual'));
 
+-- Paquete 3: control de recordatorios enviados (cada cita recibe uno solo).
+ALTER TABLE cita
+    ADD COLUMN recordatorio_enviado BOOLEAN NOT NULL DEFAULT FALSE;
+
 -- Índices pedidos por el diseño: agenda por médico y fecha, historial por
 -- paciente y filtros por estado.
 CREATE INDEX ix_cita_medico_inicio ON cita (id_medico, inicio);

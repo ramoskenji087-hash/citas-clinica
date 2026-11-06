@@ -129,6 +129,7 @@ Plantilla::inicio('Mi agenda');
           <p class="nombre"><?= Plantilla::e($c['hora_inicio']) ?> a <?= Plantilla::e($c['hora_fin']) ?> · <?= Plantilla::e($c['paciente']) ?></p>
           <p class="detalle"><?= Plantilla::e($c['codigo']) ?> · <?= Plantilla::e($c['especialidad']) ?></p>
           <p class="detalle">CI <?= Plantilla::e($c['paciente_ci']) ?> · Tel. <?= Plantilla::e($c['paciente_telefono']) ?></p>
+          <p class="detalle"><a href="ficha_paciente.php?id=<?= (int) $c['id_paciente'] ?>">Ver ficha médica</a></p>
           <?php if ($puedeVerMotivo && (string) $c['motivo'] !== ''): ?>
             <p class="detalle">Motivo: <?= Plantilla::e($c['motivo']) ?></p>
           <?php endif; ?>

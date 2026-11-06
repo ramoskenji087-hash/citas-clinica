@@ -45,7 +45,7 @@ final class AgendaService
         $where = $condiciones === [] ? '' : ' WHERE ' . implode(' AND ', $condiciones);
 
         $consulta = Conexion::obtener()->prepare(
-            "SELECT c.id_cita, c.codigo, c.id_medico, c.estado,
+            "SELECT c.id_cita, c.codigo, c.id_medico, c.id_paciente, c.estado,
                     c.inicio::text AS inicio,
                     to_char(c.inicio, 'HH24:MI') AS hora_inicio,
                     to_char(c.fin, 'HH24:MI') AS hora_fin,
