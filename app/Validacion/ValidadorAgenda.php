@@ -13,7 +13,7 @@ namespace App\Validacion;
 final class ValidadorAgenda
 {
     /** Duraciones de cita permitidas por la base de datos (RF05). */
-    private const DURACIONES = [15, 20, 30, 45, 60];
+    private const DURACIONES = [5, 10, 15];
 
     /**
      * Nombre normalizado: minúsculas, sin tildes y con espacios sobrantes quitados.
@@ -122,7 +122,7 @@ final class ValidadorAgenda
         }
 
         if (!in_array((int) $d['duracion'], self::DURACIONES, true)) {
-            $errores['duracion'] = 'La duración debe ser 15, 20, 30, 45 o 60 minutos.';
+            $errores['duracion'] = 'La duración debe ser 5, 10 o 15 minutos.';
         }
 
         return $errores;

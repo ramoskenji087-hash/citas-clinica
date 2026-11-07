@@ -274,7 +274,7 @@ $pruebas[] = ['P4b', 'La base de datos rechaza citas superpuestas (23P01)', func
     global $ctx;
 
     esperarRechazo(
-        fn () => insertarCitaDirecta($ctx->idPaciente2, FECHA_LUNES . ' 09:00:00', FECHA_LUNES . ' 09:30:00'),
+        fn () => insertarCitaDirecta($ctx->idPaciente2, FECHA_LUNES . ' 09:00:00', FECHA_LUNES . ' 09:15:00'),
         '23P01'
     );
 }];
@@ -292,7 +292,7 @@ $pruebas[] = ['P5b', 'La base de datos rechaza una cita fuera del horario (VS003
     global $ctx;
 
     esperarRechazo(
-        fn () => insertarCitaDirecta($ctx->idPaciente2, FECHA_DOMINGO . ' 09:00:00', FECHA_DOMINGO . ' 09:30:00'),
+        fn () => insertarCitaDirecta($ctx->idPaciente2, FECHA_DOMINGO . ' 09:00:00', FECHA_DOMINGO . ' 09:15:00'),
         'VS003'
     );
 }];
@@ -465,7 +465,7 @@ $pruebas[] = ['H1', 'Un bloque de horario que termina antes de empezar se rechaz
 
 $pruebas[] = ['H2', 'Un bloque de horario que se cruza con otro del mismo día se rechaza', function () {
     esperarRechazo(
-        fn () => HorarioService::agregar(1, ['dia' => 1, 'hora_inicio' => '10:00', 'hora_fin' => '11:00', 'duracion' => 30]),
+        fn () => HorarioService::agregar(1, ['dia' => 1, 'hora_inicio' => '10:00', 'hora_fin' => '11:00', 'duracion' => 15]),
         ['se cruza', 'VS012']
     );
 }];
@@ -752,6 +752,11 @@ $pruebas[] = ['I3', 'El médico ve la ficha solo con cita y con permiso del paci
         ->execute([':id' => $ctx->idPaciente1]);
     afirmar(HistorialMedicoService::fichaParaMedico(1, $ctx->idPaciente1) === null,
         'Sin permiso del paciente, el médico vio la ficha.');
+}];
+
+$pruebas[] = ['H3', 'Una duración de más de 15 minutos no se permite', function () {
+    $errores = ValidadorAgenda::horario(['dia' => 1, 'hora_inicio' => '10:00', 'hora_fin' => '12:00', 'duracion' => 30]);
+    afirmar(isset($errores['duracion']), 'Se aceptó una cita de 30 minutos.');
 }];
 
 $pasaron = 0;

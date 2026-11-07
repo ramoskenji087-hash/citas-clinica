@@ -139,7 +139,7 @@ CREATE TABLE horario_medico (
     dia_semana    SMALLINT NOT NULL CHECK (dia_semana BETWEEN 1 AND 7),
     hora_inicio   TIME     NOT NULL,
     hora_fin      TIME     NOT NULL,
-    duracion_cita SMALLINT NOT NULL CHECK (duracion_cita IN (15, 20, 30, 45, 60)),
+    duracion_cita SMALLINT NOT NULL CHECK (duracion_cita IN (5, 10, 15)),
     CONSTRAINT ck_horario_rango CHECK (hora_fin > hora_inicio)
 );
 
@@ -307,11 +307,11 @@ INSERT INTO medico_especialidad (id_medico, id_especialidad) VALUES
 
 -- Horarios de atención (dia_semana: 1 = lunes ... 5 = viernes)
 INSERT INTO horario_medico (id_horario, id_medico, dia_semana, hora_inicio, hora_fin, duracion_cita) VALUES
-    (1, 1, 1, '08:00', '12:00', 30),   -- Juan:  lunes 08:00-12:00, citas de 30 min
-    (2, 1, 3, '14:00', '18:00', 30),   -- Juan:  miércoles 14:00-18:00, citas de 30 min
-    (3, 2, 2, '09:00', '13:00', 20),   -- Ana:   martes 09:00-13:00, citas de 20 min
-    (4, 3, 4, '08:00', '12:00', 30),   -- Lucía: jueves 08:00-12:00, citas de 30 min
-    (5, 3, 5, '14:00', '17:00', 45);   -- Lucía: viernes 14:00-17:00, citas de 45 min
+    (1, 1, 1, '08:00', '12:00', 15),   -- Juan:  lunes 08:00-12:00, citas de 15 min
+    (2, 1, 3, '14:00', '18:00', 15),   -- Juan:  miércoles 14:00-18:00, citas de 15 min
+    (3, 2, 2, '09:00', '13:00', 15),   -- Ana:   martes 09:00-13:00, citas de 15 min
+    (4, 3, 4, '08:00', '12:00', 15),   -- Lucía: jueves 08:00-12:00, citas de 15 min
+    (5, 3, 5, '14:00', '17:00', 15);   -- Lucía: viernes 14:00-17:00, citas de 15 min
 
 -- Usuarios de demostración (uno por rol)
 INSERT INTO usuario (id_usuario, nombre_usuario, correo, nombres, apellidos, password_hash, id_rol, id_medico, puede_marcar_atendida, activo) VALUES

@@ -18,9 +18,9 @@ $idMedico = is_string($_GET['id'] ?? null) && ctype_digit($_GET['id']) ? (int) $
 
 $diasSemana = [1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves',
                5 => 'Viernes', 6 => 'Sábado', 7 => 'Domingo'];
-$duraciones = [15, 20, 30, 45, 60];
+$duraciones = [5, 10, 15];
 
-$datos = ['dia' => '', 'hora_inicio' => '', 'hora_fin' => '', 'duracion' => '30'];
+$datos = ['dia' => '', 'hora_inicio' => '', 'hora_fin' => '', 'duracion' => '15'];
 $errores = [];
 $errorGeneral = null;
 $medico = null;
